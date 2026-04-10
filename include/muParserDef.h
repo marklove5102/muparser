@@ -280,6 +280,7 @@ namespace mu
 		ecBYTECODE_IMPORT_EXPORT_DISABLED = 40,	///< Bytecode cannot be exported.
 
 		ecUNARY_PLUS_IN_FRONT_OF_FUNCTION = 41,	///< Unexpected binary operator found
+		ecNESTING_LIMIT = 42,					///< Throw an exception if the expressions is exceeding the nesting limit
 
 		// The last two are special entries 
 		ecCOUNT,                      ///< This is no error code, It just stores just the total number of error codes
@@ -509,8 +510,10 @@ namespace mu
 
 	static const int MaxLenExpression = 20000;
 	static const int MaxLenIdentifier = 100;
+	static const int MaxNestingDepth = 1000;
+
 	static const string_type ParserVersion = string_type(_T("2.3.6 (Development)"));
-	static const string_type ParserVersionDate = string_type(_T("20260311"));
+	static const string_type ParserVersionDate = string_type(_T("20260410"));
 } // end of namespace
 
 #if defined(_MSC_VER)

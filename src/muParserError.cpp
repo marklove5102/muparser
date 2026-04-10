@@ -97,6 +97,7 @@ namespace mu
 		m_vErrMsg[ecINVALID_CHARACTERS_FOUND] = _T("Invalid non printable characters found in expression/identifer!");
 		m_vErrMsg[ecBYTECODE_IMPORT_EXPORT_DISABLED] = _T("Bytecode cannot be imported or exported when parser is using a variable factory!");
 		m_vErrMsg[ecUNARY_PLUS_IN_FRONT_OF_FUNCTION] = _T("Unary plus operator is not allowed in front of functions!");
+		m_vErrMsg[ecNESTING_LIMIT] = _T("Expression too complex. Nesting limit reached!");
 
 		for (int i = 0; i < ecCOUNT; ++i)
 		{
