@@ -65,6 +65,7 @@ namespace mu
 			AddTest(&ParserTester::TestOptimizer);
 			AddTest(&ParserTester::TestLocalization);
 			AddTest(&ParserTester::TestIssue165);
+		AddTest(&ParserTester::TestClearConst);
 
 			ParserTester::c_iCount = 0;
 		}
@@ -1746,6 +1747,73 @@ namespace mu
 			{
 				mu::console() << _T("\n  fail: unexpected exception");
 				return 1;  // exceptions other than ParserException are not allowed
+			}
+
+			return iRet;
+		}
+
+		//---------------------------------------------------------------------------
+		// Regression test for the inconsistency between m_StrVarDef and
+		// m_vStringVarBuf after ClearConst().
+		//
+		// ClearConst() clears m_StrVarDef but does NOT clear m_vStringVarBuf,
+		// so after N round-trips the value buffer holds 2*N stale entries while
+		// the map only tracks the most-recently-added indices.  Any code path
+		// that reads an index from the map and indexes into the buffer without a
+		// proper bounds check (item->second >= m_vStringVarBuf.size()) would be
+		// silently bypassed by the existing guard (!m_vStringVarBuf.size()).
+		int ParserTester::TestClearConst()
+		{
+			ParserTester::c_iCount++;
+			int iRet(0);
+
+			mu::console() << _T("testing ClearConst consistency...");
+
+			try
+			{
+				Parser p;
+				p.DefineFun(_T("strlen"), StrLen);
+
+				// Round 1: define two string constants and evaluate.
+				p.DefineStrConst(_T("s1"), _T("hello"));
+				p.DefineStrConst(_T("s2"), _T("world"));
+				p.SetExpr(_T("strlen(s1)+strlen(s2)"));
+				value_type r1 = p.Eval();   // 5+5 = 10
+
+				if (r1 != 10)
+				{
+					mu::console() << _T("\n  fail: round 1 result should be 10, got ") << r1;
+					iRet++;
+				}
+
+				// ClearConst wipes m_StrVarDef but leaves m_vStringVarBuf with
+				// the two entries from round 1 still in place.
+				p.ClearConst();
+
+				// Round 2: re-register the same names with different values.
+				// m_vStringVarBuf now has 4 entries; the map points at indices 2 and 3.
+				p.DefineStrConst(_T("s1"), _T("hi"));
+				p.DefineStrConst(_T("s2"), _T("!"));
+				p.SetExpr(_T("strlen(s1)+strlen(s2)"));
+				value_type r2 = p.Eval();   // 2+1 = 3
+
+				if (r2 != 3)
+				{
+					// If the bug were present and the index wrapped or pointed at a
+					// stale entry, we'd get the old lengths (5+5=10) instead of 3.
+					mu::console() << _T("\n  fail: round 2 result should be 3, got ") << r2;
+					iRet++;
+				}
+
+				if (iRet == 0)
+					mu::console() << _T("passed") << endl;
+				else
+					mu::console() << _T("\n  failed with ") << iRet << _T(" errors") << endl;
+			}
+			catch (...)
+			{
+				mu::console() << _T("\n  fail: unexpected exception");
+				return 1;
 			}
 
 			return iRet;
